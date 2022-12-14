@@ -291,3 +291,78 @@ def Heatmap_2D(df_init, col1, min1, max1, bin_size1, col2, min2, max2, bin_size2
     plt.legend(loc='upper right')
 
     return
+
+def Heatmap_CR_2D(df_init, col1, min1, max1, bin_size1, ylim, col2, min2, max2, bin_size2, xlim, text_on):
+    
+    df = df_init.copy()
+    
+    cut5 = (df['funnel_steps']=='sign_and_exam')
+    
+    fig = plt.figure(figsize=(20,13))
+    gs = GridSpec(nrows=3, ncols=3, height_ratios=[1 ,1 ,1.5 ], width_ratios=[1, 1, 0.8])
+    gs.update(wspace = 0.3, hspace = 0.35)
+
+    all_axes = fig.get_axes()
+    for ax in all_axes:
+        for sp in ax.spines.values():
+            sp.set_visible(False)
+            ax.spines['top'].set_visible(False)
+            ax.spines['bottom'].set_visible(False)
+            ax.spines['left'].set_visible(False)
+            ax.spines['right'].set_visible(False)
+            ax.set_xticks([])
+            ax.set_yticks([])
+
+    ax1 = fig.add_subplot(gs[0:2,0:2])
+    
+    plt.title('Heatmap '+col1+'-'+col2+' for final step', fontsize=15)
+    plt.xlabel(col1, fontsize=15)
+    plt.ylabel(col2, fontsize=15)
+    ax1.xaxis.set_major_locator(ticker.MultipleLocator(bin_size1))
+    ax1.yaxis.set_major_locator(ticker.MultipleLocator(bin_size2))
+    
+    xbin = np.arange(min1, max1, bin_size1) - bin_size1/2
+    ybin = np.arange(min2, max2, bin_size2) - bin_size2/2
+
+    hist, xbins, ybins, im = plt.hist2d(df[cut5][col1], df[cut5][col2] , bins=(xbin, ybin), cmap=plt.cm.Blues) 
+
+    if text_on:
+        for i in range(len(ybins)-1):
+            for j in range(len(xbins)-1):
+                ax1.text(xbins[j]+bin_size1/2,ybins[i]+bin_size2/2, '{:.0f}'.format(hist.T[i,j]), color="k", ha="center", va="center", fontweight="bold", fontsize=8)
+
+    ##################################
+    ax2 = fig.add_subplot(gs[2,0:2])
+    plt.xlabel(col1, fontsize=15)
+    plt.ylabel('Nº Clients', fontsize=15)
+    plt.ylim(0,ylim)
+    ax2.xaxis.set_major_locator(ticker.MultipleLocator(bin_size1))
+
+    n_x1, xbins1, patches = plt.hist(x=df[col1], bins=xbin, color='w', alpha=0.5, rwidth=0.9, label='Convertion Rate')
+    n_x5, xbins5, patches = plt.hist(x=df[cut5][col1], bins=xbin, color='b', alpha=1, rwidth=0.9, label='sign_and_exam')
+    
+    CR_x = 100*n_x5/n_x1
+
+    for i in range(len(xbins5)-1):
+        ax2.text(xbins5[i]+bin_size1/2, n_x5[i]+n_x5[i]*0.2, str(round(CR_x[i], 1))+'%', color="k", ha="center", va="center", rotation=90, fontsize=8) 
+    
+    plt.legend(loc='upper right')
+
+    ##################################
+    ax3 = fig.add_subplot(gs[0:2,2])
+    plt.ylabel(col2, fontsize=15)
+    plt.xlabel('Nº Clients', fontsize=15)
+    plt.xlim(0,xlim)
+    ax3.yaxis.set_major_locator(ticker.MultipleLocator(bin_size2))
+
+    n_y1, ybins1, patches = plt.hist(x=df[col2], bins=ybin, color='w', alpha=0.5, rwidth=0.9, orientation='horizontal', label='Convertion Rate')
+    n_y5, ybins5, patches = plt.hist(x=df[cut5][col2], bins=ybin, color='b', alpha=1, rwidth=0.9, orientation='horizontal', label='sign_and_exam')
+    
+    CR_y = 100*n_y5/n_y1
+    
+    for i in range(len(ybins5)-1):
+        ax3.text(n_y5[i]+5, ybins5[i]+bin_size2/2 , str(round(CR_y[i], 1))+'%', color="k", ha="center", va="center", fontsize=8) 
+    
+    plt.legend(loc='upper right')
+
+    return
